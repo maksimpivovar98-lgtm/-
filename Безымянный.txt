@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Гонки на выживание</title>
+    <style>
+        /* --- Общие стили и шрифты --- */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap');
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px; /* Ширина как у мобильного экрана */
+            height: 100vh;
+            max-height: 800px;
+            background-color: #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        /* --- Экраны (Меню, Управление, Игра) --- */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s ease;
+            background-color: #fff;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* --- 1. Экран Меню (по мотивам 1 фото) --- */
+        #menu-screen {
+            background-color: #fff;
+            z-index: 10;
+        }
+
+        .menu-title {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #000;
+            -webkit-text-stroke: 2px #fff;
+            text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            margin-bottom: 10px;
+            position: relative;
+            letter-spacing: 2px;
+        }
+
+        .menu-title span {
+            color: #e63946; /* Красный акцент */
+            -webkit-text-stroke: 0;
+            text-shadow: none;
+        }
+        
+        .car-icon-menu {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            filter: drop-shadow(2px 2px 0 #000);
+        }
+
+        .menu-btn {
+            width: 80%;
+            padding: 15px;
+            margin: 8px 0;
+            background-color: #000;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #333;
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .menu-btn small {
+            font-size: 0.9rem;
+            font-weight: 400;
+            display: block;
+            color: #ccc;
+        }
+
+        .menu-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #333;
+        }
+
+        /* --- 3. Экран Управления (по мотивам 3 фото) --- */
+        #controls-screen {
+            background-color: #fff;
+            z-index: 20;
+            justify-content: space-evenly;
+            padding: 20px;
+        }
+
+        .controls-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #000;
+            text-align: center;
+            margin-bottom: 20px;
+            -webkit-text-stroke: 1px #fff;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+        }
+
+        .controls-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 40%;
+        }
+
+        .control-label {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #000;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 2px 2px 0 #000;
+        }
+
+        .key-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(180deg, #a0c4d4 0%, #7ba6b8 100%);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 0 #5a7d8c, 0 5px 10px rgba(0,0,0,0.3);
+            border: 2px solid #fff;
+        }
+
+        .key-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: #fff;
+        }
+
+        .pedal-icon {
+            width: 60px;
+            height: 80px;
+            background: #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 0 #b0b0b0, 0 5px 10px rgba(0,0,0,0.3);
+            border: 2px solid #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pedal-lines {
+            display: flex;
+            gap: 5px;
+            height: 70%;
+        }
+        
+        .pedal-line {
+            width: 6px;
+            background-color: #333;
+            border-radius: 3px;
+        }
+
+        .btn-back {
+            margin-top: 30px;
+            padding: 15px 40px;
+            background-color: #000;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #333;
+        }
+
+        .btn-back:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #333;
+        }
+
+        /* --- 2. Экран Игры (по мотивам 2 фото) --- */
+        #game-screen {
+            background-color: #7cb342; /* Зеленый фон по бокам */
+            z-index: 5;
+        }
+
+        /* Дорога */
+        .road {
+            position: absolute;
+            top: 0;
+            left: 20%;
+            width: 60%;
+            height: 100%;
+            background-color: #757575; /* Серый асфальт */
+            border-left: 5px solid #fff;
+            border-right: 5px solid #fff;
+            overflow: hidden;
+        }
+
+        /* Разметка */
+        .road-line {
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 60px;
+            background-color: #fff;
+            border-radius: 3px;
+            animation: moveRoad 1s linear infinite;
+        }
+
+        @keyframes moveRoad {
+            0% { top: -100px; }
+            100% { top: 100%; }
+        }
+
+        /* Обочина (трава и деревья) */
+        .grass {
+            position: absolute;
+            top: 0;
+            width: 20%;
+            height: 100%;
+            background-color: #7cb342;
+            overflow: hidden;
+        }
+        .grass-left { left: 0; border-right: 5px solid #e53935; }
+        .grass-right { right: 0; border-left: 5px solid #e53935; }
+
+        .tree {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #2e7d32;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: moveGrass 2s linear infinite;
+        }
+
+        @keyframes moveGrass {
+            0% { top: -50px; }
+            100% { top: 100%; }
+        }
+
+        /* Машины */
+        .car {
+            position: absolute;
+            width: 60px;
+            height: 100px;
+            bottom: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+            transition: left 0.1s;
+            z-index: 2;
+        }
+
+        .car::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            width: 40px;
+            height: 25px;
+            background-color: rgba(255,255,255,0.4);
+            border-radius: 5px 5px 0 0;
+        }
+
+        .car::after {
+            content: '';
+            position: absolute;
+            bottom: 10px;
+            width: 50px;
+            height: 15px;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+
+        .car-player {
+            background-color: #e63946; /* Красная машина */
+            left: 15%;
+        }
+
+        .car-enemy {
+            background-color: #1d3557; /* Синяя машина */
+            right: 15%;
+            transition: right 0.1s;
+        }
+
+        /* Метки 1P и 2P/Bot */
+        .player-label {
+            position: absolute;
+            top: 60%;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #fff;
+            -webkit-text-stroke: 2px #000;
+            text-shadow: 2px 2px 0 #000;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .label-1p {
+            left: 22%;
+        }
+
+        .label-2p {
+            right: 18%;
+        }
+
+        /* Кнопки управления на экране */
+        .controls-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .touch-btn {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            pointer-events: auto;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: background 0.1s;
+        }
+
+        .touch-btn:active {
+            background-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .left-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .right-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Кнопка выхода */
+        .btn-exit {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 20;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Счет */
+        .score-board {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 #000;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    
+    <!-- ЭКРАН 1: МЕНЮ -->
+    <div id="menu-screen" class="screen">
+        <div class="menu-title">ГОНКИ</div>
+        <div class="car-icon-menu">🚗</div>
+        <button class="menu-btn" id="btn-1p">1 ИГРОК<br><small>(Играть с ботом)</small></button>
+        <button class="menu-btn" id="btn-2p">2 ИГРОКА<br><small>(Играть с другом)</small></button>
+    </div>
+
+    <!-- ЭКРАН 3: УПРАВЛЕНИЕ -->
+    <div id="controls-screen" class="screen hidden">
+        <div class="controls-title">УПРАВЛЕНИЕ</div>
+        <div class="controls-grid">
+            <div class="control-item">
+                <div class="control-label">Влево</div>
+                <div class="key-icon">
+                    <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                </div>
+            </div>
+            <div class="control-item">
+                <div class="control-label">Вправо</div>
+                <div class="key-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+                </div>
+            </div>
+            <div class="control-item" style="width: 30%;">
+                <div class="control-label">Тормоз</div>
+                <div class="pedal-icon">
+                    <div class="pedal-lines">
+                        <div class="pedal-line"></div>
+                        <div class="pedal-line"></div>
+                        <div class="pedal-line"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="control-item" style="width: 30%;">
+                <div class="control-label">Газ</div>
+                <div class="pedal-icon" style="height: 100px; width: 50px;">
+                    <div class="pedal-lines">
+                        <div class="pedal-line"></div>
+                        <div class="pedal-line"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="btn-back" id="btn-start-game">НАЧАТЬ ИГРУ</button>
+    </div>
+
+    <!-- ЭКРАН 2: ИГРА -->
+    <div id="game-screen" class="screen hidden">
+        <div class="score-board">Счет: <span id="score">0</span></div>
+        <button class="btn-exit" id="btn-exit">✕</button>
+        
+        <!-- Трава слева -->
+        <div class="grass grass-left" id="grass-left">
+            <div class="tree" style="left: 10%; animation-delay: 0s;"></div>
+            <div class="tree" style="left: 50%; animation-delay: 0.5s;"></div>
+            <div class="tree" style="left: 20%; animation-delay: 1.2s;"></div>
+        </div>
+        
+        <!-- Трава справа -->
+        <div class="grass grass-right" id="grass-right">
+            <div class="tree" style="left: 30%; animation-delay: 0.2s;"></div>
+            <div class="tree" style="left: 60%; animation-delay: 0.8s;"></div>
+            <div class="tree" style="left: 10%; animation-delay: 1.5s;"></div>
+        </div>
+
+        <!-- Дорога -->
+        <div class="road">
+            <div class="road-line"></div>
+            <div class="road-line" style="animation-delay: 0.5s;"></div>
+        </div>
+
+        <!-- Метки игроков -->
+        <div class="player-label label-1p">1P</div>
+        <div class="player-label label-2p" id="label-2p">2P/Bot</div>
+
+        <!-- Машины -->
+        <div class="car car-player" id="car-1"></div>
+        <div class="car car-enemy" id="car-2"></div>
+
+        <!-- Сенсорное управление (для мобильных) -->
+        <div class="controls-overlay">
+            <div class="left-controls">
+                <div class="touch-btn" id="btn-left-1">◀</div>
+                <div class="touch-btn" id="btn-right-1">▶</div>
+            </div>
+            <div class="right-controls" id="right-controls">
+                <div class="touch-btn" id="btn-left-2">◀</div>
+                <div class="touch-btn" id="btn-right-2">▶</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- Состояние игры ---
+    const state = {
+        screen: 'menu', // menu, controls, game
+        mode: '1p', // 1p или 2p
+        score: 0,
+        gameOver: false,
+        player1Pos: 15, // Процент от левого края дороги
+        player2Pos: 15, // Процент от правого края дороги (для врага)
+        speed: 5,
+        obstacles: [],
+        keys: {
+            ArrowLeft: false,
+            ArrowRight: false,
+            KeyA: false,
+            KeyD: false
+        },
+        animationId: null,
+        lastTime: 0
+    };
+
+    // --- DOM Элементы ---
+    const menuScreen = document.getElementById('menu-screen');
+    const controlsScreen = document.getElementById('controls-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const btn1p = document.getElementById('btn-1p');
+    const btn2p = document.getElementById('btn-2p');
+    const btnStartGame = document.getElementById('btn-start-game');
+    const btnExit = document.getElementById('btn-exit');
+    const car1 = document.getElementById('car-1');
+    const car2 = document.getElementById('car-2');
+    const label2p = document.getElementById('label-2p');
+    const rightControls = document.getElementById('right-controls');
+    const scoreSpan = document.getElementById('score');
+    const road = document.querySelector('.road');
+
+    // --- Инициализация и переключение экранов ---
+    function showScreen(screenName) {
+        state.screen = screenName;
+        menuScreen.classList.add('hidden');
+        controlsScreen.classList.add('hidden');
+        gameScreen.classList.add('hidden');
+
+        if (screenName === 'menu') menuScreen.classList.remove('hidden');
+        if (screenName === 'controls') controlsScreen.classList.remove('hidden');
+        if (screenName === 'game') gameScreen.classList.remove('hidden');
+    }
+
+    btn1p.addEventListener('click', () => {
+        state.mode = '1p';
+        label2p.textContent = 'BOT';
+        rightControls.style.display = 'none'; // Скрываем кнопки для второго игрока в режиме бота
+        showScreen('controls');
+    });
+
+    btn2p.addEventListener('click', () => {
+        state.mode = '2p';
+        label2p.textContent = '2P';
+        rightControls.style.display = 'flex'; // Показываем кнопки для второго игрока
+        showScreen('controls');
+    });
+
+    btnStartGame.addEventListener('click', () => {
+        startGame();
+    });
+
+    btnExit.addEventListener('click', () => {
+        stopGame();
+        showScreen('menu');
+    });
+
+    // --- Логика игры ---
+    function startGame() {
+        state.score = 0;
+        state.gameOver = false;
+        state.player1Pos = 15;
+        state.player2Pos = 15;
+        state.speed = 5;
+        state.obstacles = [];
+        state.keys = { ArrowLeft: false, ArrowRight: false, KeyA: false, KeyD: false };
+        
+        scoreSpan.textContent = '0';
+        updateCarPositions();
+        
+        // Очищаем старые препятствия
+        document.querySelectorAll('.obstacle').forEach(el => el.remove());
+
+        showScreen('game');
+        
+        // Запускаем игровой цикл
+        state.lastTime = performance.now();
+        state.animationId = requestAnimationFrame(gameLoop);
+        
+        // Спавн препятствий
+        spawnObstacle();
+    }
+
+    function stopGame() {
+        state.gameOver = true;
+        if (state.animationId) {
+            cancelAnimationFrame(state.animationId);
+        }
+    }
+
+    function updateCarPositions() {
+        // player1Pos - это % от левого края дороги (0-100)
+        // Но дорога занимает 60% ширины экрана, начиная с 20%.
+        // Машина должна двигаться в пределах дороги.
+        // Дорога: от 20% до 80% ширины контейнера.
+        // Машина 1: left = 20% + (player1Pos / 100) * 60% - (ширина машины / 2)
+        // Упростим: будем задавать left в процентах от контейнера.
+        
+        const roadLeft = 20; // 20%
+        const roadWidth = 60; // 60%
+        const carWidthPercent = 13; // ~60px от 450px
+
+        // Для игрока 1
+        let p1Left = roadLeft + (state.player1Pos / 100) * (roadWidth - carWidthPercent);
+        car1.style.left = p1Left + '%';
+
+        // Для игрока 2 / бота
+        // player2Pos - это % от правого края дороги.
+        // Значит, от левого края дороги это (100 - player2Pos).
+        let p2LeftRoad = 100 - state.player2Pos; 
+        let p2Left = roadLeft + (p2LeftRoad / 100) * (roadWidth - carWidthPercent) - carWidthPercent;
+        // Корректировка, чтобы не вылетал за правый край
+        if (p2Left + carWidthPercent > 80) p2Left = 80 - carWidthPercent;
+        if (p2Left < 20) p2Left = 20;
+        
+        car2.style.left = p2Left + '%';
+        
+        // Сохраняем реальные координаты для проверки столкновений
+        car1.dataset.left = p1Left;
+        car2.dataset.left = p2Left;
+    }
+
+    // --- Ввод ---
+    document.addEventListener('keydown', (e) => {
+        if (state.screen !== 'game') return;
+        if (e.code === 'ArrowLeft') state.keys.ArrowLeft = true;
+        if (e.code === 'ArrowRight') state.keys.ArrowRight = true;
+        if (e.code === 'KeyA') state.keys.KeyA = true;
+        if (e.code === 'KeyD') state.keys.KeyD = true;
+        // Предотвращаем прокрутку страницы стрелками
+        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
+            e.preventDefault();
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'ArrowLeft') state.keys.ArrowLeft = false;
+        if (e.code === 'ArrowRight') state.keys.ArrowRight = false;
+        if (e.code === 'KeyA') state.keys.KeyA = false;
+        if (e.code === 'KeyD') state.keys.KeyD = false;
+    });
+
+    // Сенсорное управление
+    function setupTouchControls() {
+        const btnLeft1 = document.getElementById('btn-left-1');
+        const btnRight1 = document.getElementById('btn-right-1');
+        const btnLeft2 = document.getElementById('btn-left-2');
+        const btnRight2 = document.getElementById('btn-right-2');
+
+        // Игрок 1
+        btnLeft1.addEventListener('touchstart', (e) => { e.preventDefault(); state.keys.KeyA = true; });
+        btnLeft1.addEventListener('touchend', (e) => { e.preventDefault(); state.keys.KeyA = false; });
+        btnRight1.addEventListener('touchstart', (e) => { e.preventDefault(); state.keys.KeyD = true; });
+        btnRight1.addEventListener('touchend', (e) => { e.preventDefault(); state.keys.KeyD = false; });
+
+        // Игрок 2 (только если режим 2p)
+        btnLeft2.addEventListener('touchstart', (e) => { 
+            if (state.mode === '2p') { e.preventDefault(); state.keys.ArrowLeft = true; } 
+        });
+        btnLeft2.addEventListener('touchend', (e) => { 
+            if (state.mode === '2p') { e.preventDefault(); state.keys.ArrowLeft = false; } 
+        });
+        btnRight2.addEventListener('touchstart', (e) => { 
+            if (state.mode === '2p') { e.preventDefault(); state.keys.ArrowRight = true; } 
+        });
+        btnRight2.addEventListener('touchend', (e) => { 
+            if (state.mode === '2p') { e.preventDefault(); state.keys.ArrowRight = false; } 
+        });
+    }
+    setupTouchControls();
+
+    // --- Спавн препятствий ---
+    function spawnObstacle() {
+        if (state.gameOver || state.screen !== 'game') return;
+
+        const obstacle = document.createElement('div');
+        obstacle.className = 'car car-enemy obstacle'; // Используем стиль машины, но добавим класс obstacle
+        obstacle.style.width = '50px';
+        obstacle.style.height = '80px';
+        obstacle.style.borderRadius = '8px';
+        obstacle.style.position = 'absolute';
+        obstacle.style.top = '-100px';
+        obstacle.style.zIndex = '1';
+        obstacle.style.boxShadow = '0 5px 10px rgba(0,0,0,0.5)';
+        
+        // Случайный цвет
+        const colors = ['#f4a261', '#e76f51', '#2a9d8f', '#e9c46a', '#9b5de5'];
+        obstacle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+        // Случайная позиция по ширине дороги (от 20% до 80% контейнера)
+        const minLeft = 20;
+        const maxLeft = 75; // 80% - ширина машины
+        const leftPos = Math.random() * (maxLeft - minLeft) + minLeft;
+        obstacle.style.left = leftPos + '%';
+
+        road.appendChild(obstacle);
+        
+        // Сохраняем в массив
+        state.obstacles.push({
+            element: obstacle,
+            left: leftPos,
+            top: -100,
+            width: 50,
+            height: 80
+        });
+
+        // Следующее препятствие через случайное время
+        const nextSpawn = Math.max(400, 1200 - state.score * 10);
+        setTimeout(spawnObstacle, nextSpawn);
+    }
+
+    // --- Игровой цикл ---
+    function gameLoop(timestamp) {
+        if (state.gameOver || state.screen !== 'game') return;
+
+        const deltaTime = timestamp - state.lastTime;
+        state.lastTime = timestamp;
+
+        // Управление игроком 1 (A/D или стрелки)
+        if (state.keys.KeyA || state.keys.ArrowLeft) {
+            state.player1Pos = Math.max(0, state.player1Pos - 1.5);
+        }
+        if (state.keys.KeyD || state.keys.ArrowRight) {
+            state.player1Pos = Math.min(100, state.player1Pos + 1.5);
+        }
+
+        // Управление игроком 2 / Ботом
+        if (state.mode === '2p') {
+            // Игрок 2 управляет стрелками (левая/правая)
+            // Но мы уже используем ArrowLeft/Right для игрока 1.
+            // Нужно разделить управление. 
+            // Для 2P: Игрок 1 - A/D, Игрок 2 - Стрелки.
+            // Перепишем логику выше.
+        } else {
+            // Режим Бота
+            // Бот просто двигается в случайную сторону или следует за игроком
+            // Простая логика: бот пытается избегать препятствий или просто смещается
+            if (Math.random() < 0.02) {
+                state.player2Pos += (Math.random() - 0.5) * 10;
+            }
+            // Ограничим
+            state.player2Pos = Math.max(0, Math.min(100, state.player2Pos));
+        }
+
+        // Пересчет управления для 2P (если нужно)
+        // В текущей реализации для 2P: 
+        // Игрок 1: A/D
+        // Игрок 2: ArrowLeft/ArrowRight
+        if (state.mode === '2p') {
+            // Сброс управления игрока 1, если использовались стрелки
+            // Но мы используем KeyA/KeyD для 1P и Arrow для 2P.
+            // Переопределим:
+            // Игрок 1: KeyA / KeyD
+            // Игрок 2: ArrowLeft / ArrowRight
+            if (state.keys.KeyA) state.player1Pos = Math.max(0, state.player1Pos - 1.5);
+            if (state.keys.KeyD) state.player1Pos = Math.min(100, state.player1Pos + 1.5);
+            
+            if (state.keys.ArrowLeft) state.player2Pos = Math.min(100, state.player2Pos + 1.5); // + потому что от правого края
+            if (state.keys.ArrowRight) state.player2Pos = Math.max(0, state.player2Pos - 1.5);
+        } else {
+            // Режим 1P: Игрок 1 управляет A/D или стрелками
+            if (state.keys.KeyA || state.keys.ArrowLeft) state.player1Pos = Math.max(0, state.player1Pos - 1.5);
+            if (state.keys.KeyD || state.keys.ArrowRight) state.player1Pos = Math.min(100, state.player1Pos + 1.5);
+            
+            // Бот
+            // Бот немного тупит, но иногда уворачивается
+            if (Math.random() < 0.05) {
+                state.player2Pos += (Math.random() - 0.5) * 15;
+                state.player2Pos = Math.max(0, Math.min(100, state.player2Pos));
+            }
+        }
+
+        updateCarPositions();
+
+        // Движение препятствий
+        const speed = 5 + (state.score * 0.2); // Ускорение
+        for (let i = state.obstacles.length - 1; i >= 0; i--) {
+            const obs = state.obstacles[i];
+            obs.top += speed;
+            obs.element.style.top = obs.top + 'px';
+
+            // Проверка столкновения с игроком 1
+            const car1Rect = car1.getBoundingClientRect();
+            const obsRect = obs.element.getBoundingClientRect();
+            
+            // Простая проверка на пересечение прямоугольников
+            if (
+                car1Rect.left < obsRect.right &&
+                car1Rect.right > obsRect.left &&
+                car1Rect.top < obsRect.bottom &&
+                car1Rect.bottom > obsRect.top
+            ) {
+                // Столкновение!
+                stopGame();
+                alert('Игра окончена! Ваш счет: ' + state.score);
+                showScreen('menu');
+                return;
+            }
+
+            // Проверка столкновения с игроком 2 (если 2P)
+            if (state.mode === '2p') {
+                const car2Rect = car2.getBoundingClientRect();
+                if (
+                    car2Rect.left < obsRect.right &&
+                    car2Rect.right > obsRect.left &&
+                    car2Rect.top < obsRect.bottom &&
+                    car2Rect.bottom > obsRect.top
+                ) {
+                    stopGame();
+                    alert('Игрок 2 проиграл! Ваш счет: ' + state.score);
+                    showScreen('menu');
+                    return;
+                }
+            }
+
+            // Удаление препятствия, если оно ушло за экран
+            if (obs.top > gameScreen.clientHeight) {
+                obs.element.remove();
+                state.obstacles.splice(i, 1);
+                state.score += 10;
+                scoreSpan.textContent = state.score;
+            }
+        }
+
+        state.animationId = requestAnimationFrame(gameLoop);
+    }
+
+    // Начальная инициализация
+    showScreen('menu');
+
+</script>
+</body>
+</html>
